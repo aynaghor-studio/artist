@@ -28,37 +28,38 @@
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbw2ze0NZ8j8TOxt6cbVWEieT3CXAhLdZOE3q1nN72mWZDpA23e6o8kYblAXaTxvnf4U/exec";
 
     // 📌 Login Web App URL for validating sessions
-    const LOGIN_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzP8M8EtApZpDVo0sfeh5yIAsJ0LFu3gntNn3kAmo0aZyOTzH_2eqpUIHZMK6Edt11g2Q/exec"; // 🔁 Replace with your deployed login web app URL
+    const LOGIN_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbysdvLjYmlC4oC3Vff9CR6JH23ArgjWvGuyypgoWgp4WbEnUUxVqPfMY4wESWqcMKsTJA/exec"; // 🔁 Replace with your deployed login web app URL
 
     const email = localStorage.getItem("artistEmail");
-    const sessionId = localStorage.getItem("sessionId");
+if (!email) {
+  location.href = "index.html";
+}
 
-    if (!email || !sessionId) {
-      location.href = "index.html";
-    }
 
     // ✅ Validate session via Login App
-    async function validateSession() {
-      try {
-        const res = await fetch(LOGIN_WEB_APP_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action: "validateSession", sessionId })
-        });
-        const data = await res.json();
+    // Validate session
+async function validateSession() {
+  try {
+    const res = await fetch(LOGIN_WEB_APP_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "validateSession", sessionId })
+    });
+    const data = await res.json();
 
-        if (!data.success || data.email !== email) {
-          localStorage.removeItem("artistEmail");
-          localStorage.removeItem("sessionId");
-          location.href = "login.html";
-        }
-      } catch (err) {
-        alert("Unable to validate session. Please log in again.");
-        localStorage.removeItem("artistEmail");
-        localStorage.removeItem("sessionId");
-        location.href = "login.html";
-      }
+    if (!data.success || data.email !== email) {
+      localStorage.removeItem("artistEmail");
+      localStorage.removeItem("sessionId");
+      location.href = "login.html";
     }
+  } catch (err) {
+    alert("Unable to validate session. Please log in again.");
+    localStorage.removeItem("artistEmail");
+    localStorage.removeItem("sessionId");
+    location.href = "login.html";
+  }
+}
+
 
     // ✅ Load Navbar/Footer Components
     async function loadComponents() {
@@ -131,5 +132,3 @@
   </script>
 </body>
 </html>
-
-
