@@ -4,27 +4,60 @@
   <meta charset="UTF-8" />
   <title>Login</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* Spinner styles */
+    .spinner {
+      border: 3px solid transparent;
+      border-top: 3px solid white;
+      border-radius: 50%;
+      width: 18px;
+      height: 18px;
+      animation: spin 1s linear infinite;
+      display: inline-block;
+      vertical-align: middle;
+      margin-left: 8px;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
 </head>
-<body class="bg-[#FFF5E1] text-[#3E2723] flex justify-center items-center h-screen">
+<body class="bg-[#FFF5E1] text-[#3E2723] flex justify-center items-center min-h-screen px-4">
 
   <div class="bg-white p-8 rounded shadow max-w-md w-full">
     <h2 class="text-2xl font-bold text-center mb-6 text-[#3B82F6]">Artist Login</h2>
 
     <form id="loginForm" class="space-y-4">
-      <input type="email" name="email" required placeholder="Email"
-        class="w-full border px-4 py-2 rounded" />
+      <input
+        type="email"
+        name="email"
+        required
+        placeholder="Email"
+        class="w-full border px-4 py-2 rounded focus:outline-none focus:ring-2 focus:ring-[#3B82F6]"
+      />
 
       <div>
-        <input type="password" name="password" id="passwordInput" required placeholder="Password"
-          class="w-full border px-4 py-2 rounded" />
-        <label class="text-sm mt-1 inline-flex items-center space-x-1">
-          <input type="checkbox" onclick="togglePassword()" />
+        <input
+          type="password"
+          name="password"
+          id="passwordInput"
+          required
+          placeholder="Password"
+          class="w-full border px-4 py-2 rounded focus:outline-none focus:ring-2 focus:ring-[#3B82F6]"
+        />
+        <label class="text-sm mt-1 inline-flex items-center space-x-2 select-none cursor-pointer">
+          <input type="checkbox" onclick="togglePassword()" class="form-checkbox rounded" />
           <span>Show Password</span>
         </label>
       </div>
 
-      <button type="submit"
-        class="w-full bg-[#800000] hover:bg-[#A00000] text-white py-2 rounded">Login</button>
+      <button
+        type="submit"
+        id="loginBtn"
+        class="w-full bg-[#800000] hover:bg-[#A00000] text-white py-2 rounded flex justify-center items-center"
+      >
+        Login
+      </button>
     </form>
 
     <p id="errorMsg" class="text-red-600 text-sm mt-4 hidden text-center"></p>
@@ -33,12 +66,22 @@
   <script>
     const LOGIN_APP_URL = "https://script.google.com/macros/s/AKfycbzP8M8EtApZpDVo0sfeh5yIAsJ0LFu3gntNn3kAmo0aZyOTzH_2eqpUIHZMK6Edt11g2Q/exec";
 
-    document.getElementById("loginForm").addEventListener("submit", async (e) => {
+    const loginForm = document.getElementById("loginForm");
+    const errorMsg = document.getElementById("errorMsg");
+    const loginBtn = document.getElementById("loginBtn");
+
+    loginForm.addEventListener("submit", async (e) => {
       e.preventDefault();
+      errorMsg.classList.add("hidden");
+      errorMsg.textContent = "";
+
+      // Disable button and show spinner
+      loginBtn.disabled = true;
+      loginBtn.innerHTML = `Logging in <span class="spinner"></span>`;
+
       const form = e.target;
       const email = form.email.value.trim();
       const password = form.password.value.trim();
-      const errorMsg = document.getElementById("errorMsg");
 
       try {
         const res = await fetch(LOGIN_APP_URL, {
@@ -56,12 +99,19 @@
         } else {
           errorMsg.textContent = result.message || "Login failed.";
           errorMsg.classList.remove("hidden");
+          resetButton();
         }
       } catch (err) {
         errorMsg.textContent = "Error connecting to server.";
         errorMsg.classList.remove("hidden");
+        resetButton();
       }
     });
+
+    function resetButton() {
+      loginBtn.disabled = false;
+      loginBtn.textContent = "Login";
+    }
 
     function togglePassword() {
       const pwInput = document.getElementById("passwordInput");
