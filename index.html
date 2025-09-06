@@ -2,125 +2,75 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Login</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
   <style>
-    /* Spinner styles */
-    .spinner {
-      border: 3px solid transparent;
-      border-top: 3px solid white;
-      border-radius: 50%;
-      width: 18px;
-      height: 18px;
-      animation: spin 1s linear infinite;
-      display: inline-block;
-      vertical-align: middle;
-      margin-left: 8px;
-    }
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
+    body { background-color: #FFF5E1; color: #3E2723; }
+    .btn-primary { background-color: #800000; }
+    .btn-primary:hover { background-color: #A00000; }
   </style>
 </head>
-<body class="bg-[#FFF5E1] text-[#3E2723] flex justify-center items-center min-h-screen px-4">
+<body class="flex items-center justify-center min-h-screen">
 
-  <div class="bg-white p-8 rounded shadow max-w-md w-full">
-    <h2 class="text-2xl font-bold text-center mb-6 text-[#3B82F6]">Artist Login</h2>
+  <div class="bg-white shadow-lg rounded-lg p-8 w-full max-w-md">
+    <h2 class="text-2xl font-bold text-center text-[#3B82F6] mb-6">Login</h2>
 
-    <form id="loginForm" class="space-y-4">
-  <input
-    type="email"
-    id="emailInput"
-    name="email"
-    autocomplete="email"
-    required
-    placeholder="Email"
-    class="w-full border px-4 py-2 rounded"
-  />
-
-  <div>
-    <input
-      type="password"
-      id="passwordInput"
-      name="password"
-      autocomplete="current-password"
-      required
-      placeholder="Password"
-      class="w-full border px-4 py-2 rounded"
-    />
-    <label for="showPassword" class="text-sm mt-1 inline-flex items-center space-x-1">
-      <input type="checkbox" id="showPassword" onclick="togglePassword()" />
-      <span>Show Password</span>
-    </label>
-  </div>
-
-  <button
-    type="submit"
-    class="w-full bg-[#800000] hover:bg-[#A00000] text-white py-2 rounded"
-  >
-    Login
-  </button>
-</form>
-
-    <p id="errorMsg" class="text-red-600 text-sm mt-4 hidden text-center"></p>
+    <form id="loginForm" class="space-y-5">
+      <div>
+        <label for="email" class="block font-medium mb-1">Email</label>
+        <input type="email" id="email" class="w-full border border-gray-300 rounded px-3 py-2" required />
+      </div>
+      <div>
+        <label for="password" class="block font-medium mb-1">Password</label>
+        <input type="password" id="password" class="w-full border border-gray-300 rounded px-3 py-2" required />
+        <label class="inline-flex items-center mt-2 text-sm">
+          <input type="checkbox" id="showPassword" class="mr-2" /> Show Password
+        </label>
+      </div>
+      <button type="submit" class="btn-primary text-white w-full py-2 rounded transition">Login</button>
+      <p id="errorMsg" class="text-red-600 text-sm mt-3 hidden text-center">Invalid email or password.</p>
+    </form>
   </div>
 
   <script>
-    const LOGIN_APP_URL = "https://script.google.com/macros/s/AKfycbzP8M8EtApZpDVo0sfeh5yIAsJ0LFu3gntNn3kAmo0aZyOTzH_2eqpUIHZMK6Edt11g2Q/exec";
+    const LOGIN_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbysdvLjYmlC4oC3Vff9CR6JH23ArgjWvGuyypgoWgp4WbEnUUxVqPfMY4wESWqcMKsTJA/exec'; // Replace this
 
-    const loginForm = document.getElementById("loginForm");
-    const errorMsg = document.getElementById("errorMsg");
-    const loginBtn = document.getElementById("loginBtn");
+    document.addEventListener('DOMContentLoaded', () => {
+      const form = document.getElementById('loginForm');
+      const errorMsg = document.getElementById('errorMsg');
+      const showPassword = document.getElementById('showPassword');
+      const passwordInput = document.getElementById('password');
 
-    loginForm.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      errorMsg.classList.add("hidden");
-      errorMsg.textContent = "";
+      // Toggle password visibility
+      showPassword.addEventListener('change', () => {
+        passwordInput.type = showPassword.checked ? 'text' : 'password';
+      });
 
-      // Disable button and show spinner
-      loginBtn.disabled = true;
-      loginBtn.innerHTML = `Logging in <span class="spinner"></span>`;
+      // Handle form submit
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        errorMsg.classList.add('hidden');
 
-      const form = e.target;
-      const email = form.email.value.trim();
-      const password = form.password.value.trim();
+        const email = document.getElementById('email').value.trim();
+        const password = passwordInput.value.trim();
 
-      try {
-        const res = await fetch(LOGIN_APP_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action: "login", email, password })
-        });
-
-        const result = await res.json();
-
-        if (result.success) {
-          localStorage.setItem("artistEmail", email);
-          localStorage.setItem("sessionId", result.sessionId);
-          window.location.href = "dashboard.html";
-        } else {
-          errorMsg.textContent = result.message || "Login failed.";
-          errorMsg.classList.remove("hidden");
-          resetButton();
+        try {
+          const response = await fetch(LOGIN_WEB_APP_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password })
+          });
+          const result = await response.json();
+          //...
+        } catch (error) {
+          console.error('Fetch error details:', error);
+          errorMsg.textContent = 'Server error. Try again later.';
+          errorMsg.classList.remove('hidden');
         }
-      } catch (err) {
-        errorMsg.textContent = "Error connecting to server.";
-        errorMsg.classList.remove("hidden");
-        resetButton();
-      }
+      });
     });
-
-    function resetButton() {
-      loginBtn.disabled = false;
-      loginBtn.textContent = "Login";
-    }
-
-    function togglePassword() {
-      const pwInput = document.getElementById("passwordInput");
-      pwInput.type = pwInput.type === "password" ? "text" : "password";
-    }
   </script>
+
 </body>
 </html>
-
-
