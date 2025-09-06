@@ -23,7 +23,7 @@
     const email = localStorage.getItem("artistEmail");
     const sessionId = localStorage.getItem("sessionId");
 
-    if (!email || !sessionId) location.href = "login.html";
+    if (!email || !sessionId) location.href = "index.html";
 
     const urlParams = new URLSearchParams(window.location.search);
     const albumId = urlParams.get("id");
@@ -116,3 +116,4 @@
   </script>
 </body>
 </html>
+
