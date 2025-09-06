@@ -28,37 +28,39 @@
     <h2 class="text-2xl font-bold text-center mb-6 text-[#3B82F6]">Artist Login</h2>
 
     <form id="loginForm" class="space-y-4">
-      <input
-        type="email"
-        name="email"
-        required
-        placeholder="Email"
-        class="w-full border px-4 py-2 rounded focus:outline-none focus:ring-2 focus:ring-[#3B82F6]"
-      />
+  <input
+    type="email"
+    id="emailInput"
+    name="email"
+    autocomplete="email"
+    required
+    placeholder="Email"
+    class="w-full border px-4 py-2 rounded"
+  />
 
-      <div>
-        <input
-          type="password"
-          name="password"
-          id="passwordInput"
-          required
-          placeholder="Password"
-          class="w-full border px-4 py-2 rounded focus:outline-none focus:ring-2 focus:ring-[#3B82F6]"
-        />
-        <label class="text-sm mt-1 inline-flex items-center space-x-2 select-none cursor-pointer">
-          <input type="checkbox" onclick="togglePassword()" class="form-checkbox rounded" />
-          <span>Show Password</span>
-        </label>
-      </div>
+  <div>
+    <input
+      type="password"
+      id="passwordInput"
+      name="password"
+      autocomplete="current-password"
+      required
+      placeholder="Password"
+      class="w-full border px-4 py-2 rounded"
+    />
+    <label for="showPassword" class="text-sm mt-1 inline-flex items-center space-x-1">
+      <input type="checkbox" id="showPassword" onclick="togglePassword()" />
+      <span>Show Password</span>
+    </label>
+  </div>
 
-      <button
-        type="submit"
-        id="loginBtn"
-        class="w-full bg-[#800000] hover:bg-[#A00000] text-white py-2 rounded flex justify-center items-center"
-      >
-        Login
-      </button>
-    </form>
+  <button
+    type="submit"
+    class="w-full bg-[#800000] hover:bg-[#A00000] text-white py-2 rounded"
+  >
+    Login
+  </button>
+</form>
 
     <p id="errorMsg" class="text-red-600 text-sm mt-4 hidden text-center"></p>
   </div>
@@ -120,4 +122,5 @@
   </script>
 </body>
 </html>
+
 
