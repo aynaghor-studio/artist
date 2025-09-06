@@ -34,7 +34,7 @@
   </div>
 
   <script>
-    const LOGIN_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbysdvLjYmlC4oC3Vff9CR6JH23ArgjWvGuyypgoWgp4WbEnUUxVqPfMY4wESWqcMKsTJA/exec'; // Replace this
+    const LOGIN_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbysdvLjYmlC4oC3Vff9CR6JH23ArgjWvGuyypgoWgp4WbEnUUxVqPfMY4wESWqcMKsTJA/exec';
 
     document.addEventListener('DOMContentLoaded', () => {
       const form = document.getElementById('loginForm');
@@ -42,12 +42,10 @@
       const showPassword = document.getElementById('showPassword');
       const passwordInput = document.getElementById('password');
 
-      // Toggle password visibility
       showPassword.addEventListener('change', () => {
         passwordInput.type = showPassword.checked ? 'text' : 'password';
       });
 
-      // Handle form submit
       form.addEventListener('submit', async (e) => {
         e.preventDefault();
         errorMsg.classList.add('hidden');
@@ -58,11 +56,22 @@
         try {
           const response = await fetch(LOGIN_WEB_APP_URL, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+              'Content-Type': 'text/plain;charset=utf-8' // 👈 FIXED: avoids CORS preflight
+            },
             body: JSON.stringify({ email, password })
           });
-          const result = await response.json();
-          //...
+
+          const text = await response.text();
+          const result = JSON.parse(text);
+
+          if (result.success) {
+            localStorage.setItem('artistEmail', result.email);
+            window.location.href = 'dashboard.html';
+          } else {
+            errorMsg.textContent = 'Invalid email or password.';
+            errorMsg.classList.remove('hidden');
+          }
         } catch (error) {
           console.error('Fetch error details:', error);
           errorMsg.textContent = 'Server error. Try again later.';
