@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Moderator Panel</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-[#FFF5E1] text-[#3E2723] min-h-screen flex flex-col">
+
+  <!-- Navbar -->
+  <nav class="bg-[#800000] text-white p-4 flex justify-between items-center">
+    <h1 class="text-xl font-bold">Moderator Panel</h1>
+    <button id="logoutBtn" class="bg-[#3B82F6] hover:bg-[#1E40AF] px-3 py-1 rounded transition">Logout</button>
+  </nav>
+
+  <main class="flex-grow max-w-6xl mx-auto p-6">
+    <h2 class="text-2xl font-semibold mb-6 text-[#800000]">Album Unlock Requests</h2>
+    <div id="requestsContainer" class="space-y-6"></div>
+    <p id="noRequests" class="text-gray-600 hidden">No unlock requests at the moment.</p>
+  </main>
+
+  <footer class="bg-[#800000] text-white text-center p-4">
+    &copy; 2025 Moderator Panel
+  </footer>
+
+<script>
+  // URLs for your deployed apps scripts (replace with your own deployment URLs)
+  const MODERATOR_LOGIN_WEB_APP_URL = "https://script.google.com/macros/s/YOUR_MODERATOR_LOGIN_WEB_APP_ID/exec";
+  const MODERATOR_PANEL_WEB_APP_URL = "https://script.google.com/macros/s/YOUR_MODERATOR_PANEL_WEB_APP_ID/exec";
+
+  // Moderator credentials and session info stored in localStorage
+  const moderatorEmail = localStorage.getItem("moderatorEmail");
+  const moderatorSessionId = localStorage.getItem("moderatorSessionId");
+
+  if (!moderatorEmail || !moderatorSessionId) {
+    window.location.href = "moderator_login.html"; // your moderator login page
+  }
+
+  document.getElementById("logoutBtn").addEventListener("click", () => {
+    localStorage.removeItem("moderatorEmail");
+    localStorage.removeItem("moderatorSessionId");
+    window.location.href = "moderator_login.html";
+  });
+
+  // Validate moderator session with moderator login web app
+  async function validateSession() {
+    const res = await fetch(MODERATOR_LOGIN_WEB_APP_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "validateSession", sessionId: moderatorSessionId })
+    });
+    const data = await res.json();
+    if (!data.success || data.email !== moderatorEmail) {
+      alert("Session expired or invalid. Please login again.");
+      localStorage.clear();
+      window.location.href = "moderator_login.html";
+      return false;
+    }
+    return true;
+  }
+
+  // Load unlock requests from moderator panel web app
+  async function loadUnlockRequests() {
+    const res = await fetch(MODERATOR_PANEL_WEB_APP_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "getUnlockRequests", email: moderatorEmail, sessionId: moderatorSessionId })
+    });
+    const data = await res.json();
+
+    const container = document.getElementById("requestsContainer");
+    const noRequests = document.getElementById("noRequests");
+
+    if (!data.success) {
+      alert("Failed to load requests: " + data.message);
+      return;
+    }
+
+    const requests = data.requests || [];
+    if (requests.length === 0) {
+      noRequests.classList.remove("hidden");
+      container.innerHTML = "";
+      return;
+    }
+    noRequests.classList.add("hidden");
+
+    container.innerHTML = requests.map(req => `
+      <div class="bg-white rounded-lg shadow-md p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center">
+        <div class="mb-4 sm:mb-0 max-w-lg">
+          <h3 class="text-xl font-bold">${req.albumTitle}</h3>
+          <p class="text-sm text-[#3E2723]">Artist: <span class="font-semibold">${req.artistEmail}</span></p>
+          <p class="text-sm text-[#3E2723]">Requested at: ${new Date(req.requestedAt).toLocaleString()}</p>
+          ${req.reason ? `<p class="mt-2 text-sm text-[#800000] font-medium">Reason for resend to draft: <em>${req.reason}</em></p>` : ''}
+        </div>
+        <div class="flex space-x-4">
+          <button class="approveBtn bg-[#800000] hover:bg-[#A00000] text-white px-5 py-2 rounded transition" data-id="${req.requestId}">Approve</button>
+          <button class="rejectBtn bg-gray-400 hover:bg-gray-500 text-[#3E2723] px-5 py-2 rounded transition" data-id="${req.requestId}">Reject</button>
+        </div>
+      </div>
+    `).join('');
+
+    // Add event listeners for approve/reject buttons
+    document.querySelectorAll(".approveBtn").forEach(btn =>
+      btn.addEventListener("click", () => handleRequest(btn.dataset.id, true))
+    );
+    document.querySelectorAll(".rejectBtn").forEach(btn =>
+      btn.addEventListener("click", () => handleRequest(btn.dataset.id, false))
+    );
+  }
+
+  // Handle approve or reject request
+  async function handleRequest(requestId, approve) {
+    const confirmMsg = approve 
+      ? "Are you sure you want to APPROVE this request? This will set the album status to DRAFT."
+      : "Are you sure you want to REJECT this request? The album will remain locked.";
+
+    if (!confirm(confirmMsg)) return;
+
+    let reason = "";
+    if (!approve) {
+      reason = prompt("Please provide a reason for rejection (optional):", "");
+    }
+
+    const res = await fetch(MODERATOR_PANEL_WEB_APP_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "handleRequest",
+        email: moderatorEmail,
+        sessionId: moderatorSessionId,
+        requestId,
+        approve,
+        reason
+      })
+    });
+
+    const data = await res.json();
+    if (data.success) {
+      alert(`Request ${approve ? "approved" : "rejected"} successfully.`);
+      await loadUnlockRequests();
+    } else {
+      alert(`Failed: ${data.message}`);
+    }
+  }
+
+  // Initialization
+  (async () => {
+    const valid = await validateSession();
+    if (valid) {
+      await loadUnlockRequests();
+    }
+  })();
+
+</script>
+
+</body>
+</html>

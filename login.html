@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Artist Login</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-[#FFF5E1] text-[#3E2723]">
+
+  <div class="flex items-center justify-center min-h-screen">
+    <div class="bg-white p-8 rounded-lg shadow-lg w-full max-w-md transition duration-500 ease-in-out transform hover:scale-[1.02]">
+      <h2 class="text-2xl font-bold mb-6 text-[#3B82F6]">Login to Artist Portal</h2>
+      <form id="loginForm" class="space-y-4">
+        <input type="email" name="email" required placeholder="Email"
+          class="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#3B82F6]">
+        <input type="password" name="password" required placeholder="Password"
+          class="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#3B82F6]">
+        <button type="submit"
+          class="w-full bg-[#800000] hover:bg-[#A00000] text-white py-2 rounded transition-all">Login</button>
+      </form>
+      <p id="errorMsg" class="text-red-600 mt-4 text-sm font-semibold"></p>
+    </div>
+  </div>
+
+  <script>
+  const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzP8M8EtApZpDVo0sfeh5yIAsJ0LFu3gntNn3kAmo0aZyOTzH_2eqpUIHZMK6Edt11g2Q/exec";
+
+  document.getElementById("loginForm").addEventListener("submit", async function (e) {
+    e.preventDefault();
+    const form = e.target;
+    const email = form.email.value.trim();
+    const password = form.password.value.trim();
+
+    const res = await fetch(WEB_APP_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "login", email, password })
+    });
+
+    const data = await res.json();
+    if (data.success) {
+      // ✅ Save sessionId to localStorage
+      localStorage.setItem("sessionId", data.sessionId);
+      window.location.href = "dashboard.html";
+    } else {
+      document.getElementById("errorMsg").innerText = "Invalid login credentials.";
+    }
+  });
+</script>
+</body>
+</html>

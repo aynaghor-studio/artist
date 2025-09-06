@@ -1,0 +1,16 @@
+<nav class="bg-gradient-to-r from-[#800000] to-[#008080] text-white py-4 shadow">
+  <div class="max-w-6xl mx-auto px-4 flex justify-between items-center">
+    <a href="dashboard.html" class="text-xl font-bold hover:text-[#FFDB58] transition-all">🎵 Artist Portal</a>
+    <div>
+      <a href="dashboard.html" class="mr-4 hover:text-[#FFDB58] transition-all">Dashboard</a>
+      <button onclick="logout()" class="hover:text-[#FFDB58] transition-all">Logout</button>
+    </div>
+  </div>
+</nav>
+
+<script>
+  function logout() {
+    localStorage.removeItem("artistEmail");
+    location.href = "login.html";
+  }
+</script>

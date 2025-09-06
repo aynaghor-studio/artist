@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-[#FFF5E1] text-[#3E2723]">
+
+  <!-- Navbar -->
+  <div id="navbar"></div>
+
+  <div class="max-w-6xl mx-auto mt-10">
+    <div class="flex justify-between items-center mb-6">
+      <h1 class="text-3xl font-bold text-[#3B82F6]">My Albums</h1>
+      <a href="album_form.html"
+         class="bg-[#800000] hover:bg-[#A00000] text-white px-4 py-2 rounded shadow transition">+ New Album</a>
+    </div>
+
+    <div id="albumsContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+  </div>
+
+  <!-- Footer -->
+  <div id="footer"></div>
+
+  <script>
+    // 📌 Web App URL for ALBUMS backend
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbw2ze0NZ8j8TOxt6cbVWEieT3CXAhLdZOE3q1nN72mWZDpA23e6o8kYblAXaTxvnf4U/exec";
+
+    // 📌 Login Web App URL for validating sessions
+    const LOGIN_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzP8M8EtApZpDVo0sfeh5yIAsJ0LFu3gntNn3kAmo0aZyOTzH_2eqpUIHZMK6Edt11g2Q/exec"; // 🔁 Replace with your deployed login web app URL
+
+    const email = localStorage.getItem("artistEmail");
+    const sessionId = localStorage.getItem("sessionId");
+
+    if (!email || !sessionId) {
+      location.href = "login.html";
+    }
+
+    // ✅ Validate session via Login App
+    async function validateSession() {
+      try {
+        const res = await fetch(LOGIN_WEB_APP_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "validateSession", sessionId })
+        });
+        const data = await res.json();
+
+        if (!data.success || data.email !== email) {
+          localStorage.removeItem("artistEmail");
+          localStorage.removeItem("sessionId");
+          location.href = "login.html";
+        }
+      } catch (err) {
+        alert("Unable to validate session. Please log in again.");
+        localStorage.removeItem("artistEmail");
+        localStorage.removeItem("sessionId");
+        location.href = "login.html";
+      }
+    }
+
+    // ✅ Load Navbar/Footer Components
+    async function loadComponents() {
+      try {
+        const navbar = await fetch("components/navbar.html").then(r => r.text());
+        const footer = await fetch("components/footer.html").then(r => r.text());
+        document.getElementById("navbar").innerHTML = navbar;
+        document.getElementById("footer").innerHTML = footer;
+      } catch (e) {
+        console.warn("Failed to load navbar or footer:", e.message);
+      }
+    }
+
+    // ✅ Load albums
+    async function loadAlbums() {
+      const container = document.getElementById("albumsContainer");
+      container.innerHTML = `<p class="text-gray-500">Loading albums...</p>`;
+
+      try {
+        const res = await fetch(WEB_APP_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "getAlbums", email, sessionId })
+        });
+
+        const result = await res.json();
+        if (!result.success) {
+          container.innerHTML = `<p class="text-red-600">Failed to load albums. Please try again.</p>`;
+          return;
+        }
+
+        const albums = result.albums || [];
+
+        container.innerHTML = albums.length
+          ? albums.map(album => `
+            <div class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-all transform hover:-translate-y-1 duration-300">
+              <img src="${album.coverUrl || 'https://via.placeholder.com/400x300?text=No+Cover'}"
+                   alt="${album.title} Cover"
+                   class="h-48 w-full object-cover"
+                   onerror="this.src='https://via.placeholder.com/400x300?text=Image+Error';" />
+              <div class="p-4">
+                <h3 class="text-xl font-bold">${album.title}</h3>
+                <p class="text-[#374151]">${album.genre}</p>
+                <p class="text-sm mt-1"><span class="font-medium">Status:</span> ${album.status}</p>
+
+                <div class="mt-2 flex flex-wrap gap-2">
+                  ${(album.platforms || []).map(platform => `
+                    <span class="text-[#3E2723] bg-[#FFDB58] px-2 py-1 rounded text-xs font-semibold select-none">${platform}</span>
+                  `).join('')}
+                </div>
+
+                <a href="album_view.html?id=${album.id}" class="mt-3 inline-block text-[#3B82F6] hover:text-[#FFDB58] transition">View</a>
+              </div>
+            </div>
+          `).join('')
+          : `<p class="text-gray-600">No albums found.</p>`;
+
+      } catch (err) {
+        console.error("Error loading albums:", err);
+        container.innerHTML = `<p class="text-red-500">An error occurred while fetching albums.</p>`;
+      }
+    }
+
+    // ✅ Initialize page
+    (async () => {
+      await validateSession();
+      await loadComponents();
+      await loadAlbums();
+    })();
+  </script>
+</body>
+</html>

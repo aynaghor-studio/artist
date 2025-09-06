@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Create/Edit Album</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-[#FFF5E1] text-[#3E2723]">
+
+  <!-- Navbar -->
+  <div id="navbar"></div>
+
+  <div class="max-w-4xl mx-auto mt-10 bg-white p-6 rounded shadow">
+    <h1 class="text-2xl font-bold text-[#3B82F6] mb-6">Create / Edit Album</h1>
+    <form id="albumForm" class="space-y-4">
+      <input type="text" name="title" required placeholder="Album Title"
+        class="w-full border px-4 py-2 rounded focus:outline-none focus:ring-2 focus:ring-[#3B82F6]" />
+      <input type="text" name="genre" required placeholder="Genre"
+        class="w-full border px-4 py-2 rounded focus:outline-none focus:ring-2 focus:ring-[#3B82F6]" />
+
+      <label class="block mt-4">Cover Artwork:</label>
+      <input type="file" id="coverFile" accept="image/*" class="block mt-1" />
+      <img id="coverPreview" class="mt-4 h-40 hidden object-cover rounded" />
+
+      <!-- Platform Selection -->
+      <div class="mt-6">
+        <label class="block text-[#3E2723] font-semibold mb-2">Select Music Platforms</label>
+        <div class="flex flex-wrap gap-4">
+          <label class="inline-flex items-center cursor-pointer text-[#374151] hover:text-[#FFDB58] transition">
+            <input type="checkbox" name="platforms" value="Spotify" class="mr-2 accent-[#800000]" />
+            Spotify
+          </label>
+          <label class="inline-flex items-center cursor-pointer text-[#374151] hover:text-[#FFDB58] transition">
+            <input type="checkbox" name="platforms" value="Apple Music" class="mr-2 accent-[#800000]" />
+            Apple Music
+          </label>
+          <label class="inline-flex items-center cursor-pointer text-[#374151] hover:text-[#FFDB58] transition">
+            <input type="checkbox" name="platforms" value="YouTube Music" class="mr-2 accent-[#800000]" />
+            YouTube Music
+          </label>
+          <label class="inline-flex items-center cursor-pointer text-[#374151] hover:text-[#FFDB58] transition">
+            <input type="checkbox" name="platforms" value="Amazon Music" class="mr-2 accent-[#800000]" />
+            Amazon Music
+          </label>
+        </div>
+      </div>
+
+      <div id="trackList" class="space-y-2 mt-6">
+        <h3 class="font-semibold">Tracks</h3>
+        <div class="flex space-x-2">
+          <input type="text" placeholder="Track Name" class="trackName border px-2 py-1 rounded w-1/2" />
+          <input type="file" class="trackFile w-1/2" />
+        </div>
+      </div>
+
+      <button type="button" onclick="addTrackField()" class="text-sm text-[#3B82F6] hover:text-[#FFDB58]">+ Add Another Track</button>
+
+      <button type="submit"
+        class="block w-full bg-[#800000] hover:bg-[#A00000] text-white py-2 rounded mt-6">Save Album</button>
+    </form>
+  </div>
+
+  <!-- Footer -->
+  <div id="footer"></div>
+
+  <script>
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbw2ze0NZ8j8TOxt6cbVWEieT3CXAhLdZOE3q1nN72mWZDpA23e6o8kYblAXaTxvnf4U/exec"; // 🔁 Replace with your album app URL
+    const email = localStorage.getItem("artistEmail");
+    const sessionId = localStorage.getItem("sessionId");
+
+    if (!email || !sessionId) location.href = "login.html";
+
+    // Load navbar/footer components
+    async function loadComponents() {
+      document.getElementById("navbar").innerHTML = await fetch("components/navbar.html").then(r => r.text());
+      document.getElementById("footer").innerHTML = await fetch("components/footer.html").then(r => r.text());
+    }
+
+    // Add track input field
+    function addTrackField() {
+      const trackList = document.getElementById("trackList");
+      const div = document.createElement("div");
+      div.className = "flex space-x-2";
+      div.innerHTML = `
+        <input type="text" placeholder="Track Name" class="trackName border px-2 py-1 rounded w-1/2" />
+        <input type="file" class="trackFile w-1/2" />
+      `;
+      trackList.appendChild(div);
+    }
+
+    // Preview cover image
+    document.getElementById("coverFile").addEventListener("change", e => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        document.getElementById("coverPreview").src = reader.result;
+        document.getElementById("coverPreview").classList.remove("hidden");
+      };
+      reader.readAsDataURL(e.target.files[0]);
+    });
+
+    // Convert file to base64
+    function toBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
+    // Upload individual track to Drive
+    async function uploadTrackFile(file) {
+      const base64 = await toBase64(file);
+      const res = await fetch(WEB_APP_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "uploadTrack",
+          fileName: file.name,
+          fileBase64: base64
+        })
+      });
+      return await res.json(); // returns { success, url }
+    }
+
+    // Handle form submission
+    document.getElementById("albumForm").addEventListener("submit", async e => {
+      e.preventDefault();
+      const form = e.target;
+
+      const title = form.title.value.trim();
+      const genre = form.genre.value.trim();
+      const coverFile = document.getElementById("coverFile").files[0];
+      const coverBase64 = coverFile ? await toBase64(coverFile) : null;
+
+      // Get platform selections
+      const platforms = Array.from(form.querySelectorAll('input[name="platforms"]:checked')).map(input => input.value);
+
+      // Handle tracks
+      const trackNames = Array.from(document.querySelectorAll('.trackName')).map(input => input.value.trim());
+      const trackFiles = Array.from(document.querySelectorAll('.trackFile')).map(input => input.files[0]);
+      const tracks = [];
+
+      for (let i = 0; i < trackFiles.length; i++) {
+        if (trackFiles[i]) {
+          const upload = await uploadTrackFile(trackFiles[i]);
+          if (upload.success) {
+            tracks.push({ name: trackNames[i], url: upload.url });
+          }
+        }
+      }
+
+      // Send data to Apps Script
+      const res = await fetch(WEB_APP_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "createAlbum",
+          email,
+          sessionId,
+          albumData: {
+            title,
+            genre,
+            coverBase64,
+            platforms,
+            tracks
+          }
+        })
+      });
+
+      const result = await res.json();
+      if (result.success) {
+        location.href = "dashboard.html";
+      } else {
+        alert("Failed to save album: " + (result.message || "Unknown error"));
+      }
+    });
+
+    loadComponents();
+  </script>
+</body>
+</html>
